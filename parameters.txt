@@ -1,0 +1,10 @@
+|Protocol:HTTP|
+|Threshold:170|
+|SmoothingFactor:3|
+|TruePositiveRate:99.99|
+|Distance:1111|
+|Protocol:DNS|
+|Threshold:3.33|
+|SmoothingFactor:4.44|
+|TruePositiveRate:98.88|
+|Distance:2222|
