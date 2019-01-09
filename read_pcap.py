@@ -1,4 +1,5 @@
 import dpkt, dpkt.dns
+import os
 
 def hexify(x):
     #In case the strings from DNS resolver contain non-ASCII characters"
@@ -217,32 +218,12 @@ def readPcap(fileName, mode):
     return payload_list
 
 
-def getPayloadStrings(training_protocol):
+def getPayloadStrings(folder):
     payload_list = []
 
-    #DNS
-    if training_protocol == "DNS":
-        list1_dns = readPcap('data/dns.pcap', "training")
-        payload_list.extend(list1_dns)
+    for fn in os.listdir(folder):
+        payload_list.extend(readPcap(os.path.join(folder,fn),'training'))
 
-    #HTTP
-    elif training_protocol == "HTTP":
-        list1 = readPcap('data/HTTPtext_V1.pcap', "training")
-        list2 = readPcap('data/HTTPtext_V2.pcap', "training")    
-        list3 = readPcap('data/modified_new3_simple_http.pcap', "training")
-        list4 = readPcap('data/modified_new4_simple_http.pcap', "training")
-        list5 = readPcap('data/modified_new5_simple_http.pcap', "training")
-        list6 = readPcap('data/modified_new6_simple_http.pcap', "training")
-        list7 = readPcap('data/modified_new_simple_http.pcap', "training")
-
-        payload_list.extend(list1)
-        payload_list.extend(list2)
-        payload_list.extend(list3)
-        payload_list.extend(list4)
-        payload_list.extend(list5)
-        payload_list.extend(list6)
-        payload_list.extend(list7)
-        
     return payload_list
 
 
