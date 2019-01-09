@@ -17,6 +17,8 @@ apt-get update
 # Install python2.7
 apt-get install -y python2.7
 
+apt-get install -y python-tk
+
 # Install pip
 apt-get install -y python-pip
 
