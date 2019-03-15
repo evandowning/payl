@@ -12,11 +12,11 @@ fi
 set -e
 
 # Update
-apt-get update
+apt update
 
 # Install python2.7
-apt-get install -y python2.7
-apt-get install -y python-tk    # https://dpkt.readthedocs.io/en/latest/
-apt-get install -y python-scipy
-apt-get install -y python-pip
+apt install -y python2.7
+apt install -y python-tk    # https://dpkt.readthedocs.io/en/latest/
+apt install -y python-scipy
+apt install -y python-pip
 pip install -r requirements.txt

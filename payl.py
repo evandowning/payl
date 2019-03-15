@@ -28,12 +28,14 @@ def _main():
     protocol = str(config['payl']['type'])
     smoothing_lower = float(config['payl']['smoothing_lower'])
     smoothing_upper = float(config['payl']['smoothing_upper'])
+    smoothing_iter = float(config['payl']['smoothing_iter'])
     threshold_lower = float(config['payl']['threshold_lower'])
     threshold_upper = float(config['payl']['threshold_upper'])
+    threshold_iter = float(config['payl']['threshold_iter'])
 
     # Check protocol parameter
     if protocol not in ['HTTP','DNS']:
-        sys.stderr.write('Error. {0} is an invalid protocol.\n'.format(protocol))
+        sys.stderr.write('Error. "{0}" is an invalid protocol.\n'.format(protocol))
         sys.exit(1)
 
     # Get samples
@@ -69,8 +71,8 @@ def _main():
             test.remove(max_test)
 
     # Loop over parameter ranges to find best parameters
-    for sf in np.arange(smoothing_lower, smoothing_upper, 0.1):
-        for thresh in np.arange(threshold_lower, threshold_upper, 50):
+    for sf in np.arange(smoothing_lower, smoothing_upper, smoothing_iter):
+        for thresh in np.arange(threshold_lower, threshold_upper, threshold_iter):
             print 'Smoothing Factor: {0}'.format(sf)
             print 'Threshold for Mahalanobis Distance: {0}'.format(thresh)
             analysis.train_and_test(train, test, sf, thresh)

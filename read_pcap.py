@@ -1,6 +1,5 @@
 import sys
 import os
-import struct
 import dpkt
 import socket
 
@@ -166,6 +165,7 @@ def getPayloadStrings(sample):
     payload = list()
 
     for fn in sample:
+        print 'scanning ', fn
         payload.extend(readPcap(fn))
 
     return payload
