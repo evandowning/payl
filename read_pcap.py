@@ -1,238 +1,171 @@
-import dpkt, dpkt.dns
+import sys
 import os
+import struct
+import dpkt
+import socket
+
+# DNS parsing code from: https://github.com/jeffsilverm/dpkt_doc/blob/master/decode_dns.py
+
+type_table = {1:'A',        # IP v4 address, RFC 1035
+              2:'NS',       # Authoritative name server, RFC 1035
+              5:'CNAME',    # Canonical name for an alias, RFC 1035
+              6:'SOA',      # Marks the start of a zone of authority, RFC 1035
+             12:'PTR',      # Domain name pointer, RFC 1035
+             13:'HINFO',    # Host information, RFC 1035
+             15:'MX',       # Mail exchange, RFC 1035
+             28:'AAAA',     # IP v6 address, RFC 3596
+             16:'TXT',      # 
+             33:'SRV',     # RFC 2782
+             255:'ANY',     # all cached reco
+             }
+
 
 def hexify(x):
-    #In case the strings from DNS resolver contain non-ASCII characters"
-    toHex = lambda x:"".join([hex(ord(c))[2:].zfill(2) for c in x])
+    "The strings from DNS resolver contain non-ASCII characters - I don't know why.  This function investigates that"
+    toHex = lambda x:''.join([hex(ord(c))[2:].zfill(2) for c in x])
     return toHex(x)
 
-def decode_dns_response ( rr, response_type ) :
-    #source: https://github.com/jeffsilverm/dpkt_doc/blob/master/decode_dns.py 
-    
+# Decode DNS response
+def decode_dns_response(rr, response_type):
+    global type_table
+
     r_type = rr.type
     r_data = rr.rdata
-    
-    type_table = {1:"A",        # IP v4 address, RFC 1035
-                  2:"NS",       # Authoritative name server, RFC 1035
-                  5:"CNAME",    # Canonical name for an alias, RFC 1035
-                  6:"SOA",      # Marks the start of a zone of authority, RFC 1035
-                 12:"PTR",      # Domain name pointer, RFC 1035
-                 13:"HINFO",    # Host information, RFC 1035
-                 15:"MX",       # Mail exchange, RFC 1035
-                 28:"AAAA",     # IP v6 address, RFC 3596
-                 16:"TXT",      # 
-                 33:"SRV",     # RFC 2782
-                 255:"ANY",     # all cached reco
-                 }
-    
-    rr_string = ""
 
-    try:
-        r_data.encode('utf-8')
-    except UnicodeDecodeError:
-        #print 'This string contains more than just the ASCII characters.'
-        #return "r_type" + ":" + type_table[r_type] + ":" + r_data
-        return "\\" + type_table[r_type] + "\\" + r_data
-        
-    if r_type == dpkt.dns.DNS_CNAME :
-        #print "Response is a CNAME ", r_data," in hex: ",  hexify(r_data)
-        #print "Response is a CNAME ", rr.cname
+    rr_string = ''
+
+    if r_type == dpkt.dns.DNS_CNAME:
         rr_string = rr.cname
-        
-    elif r_type == dpkt.dns.DNS_A :
-        #print "response is an IPv4 address", socket.inet_ntoa( r_data )
-        rr_string = socket.inet_ntoa( r_data )
-        
-    elif r_type == dpkt.dns.DNS_NS :
-        #print "Response is a NS name", r_data," in hex: ",  hexify(r_data) 
-        #print "Response is a NS name", rr.nsname
+    elif r_type == dpkt.dns.DNS_A:
+        if len(r_data) == 0:
+            return 'unknown'
+        rr_string = socket.inet_ntoa(r_data)
+    elif r_type == dpkt.dns.DNS_NS:
         rr_string = rr.nsname
-        
-    elif r_type == dpkt.dns.DNS_AAAA :
-        #print "response is an IPv6 address", socket.inet_ntop( socket.AF_INET6, r_data )
-        rr_string = socket.inet_ntop( socket.AF_INET6, r_data )
-        
-    elif r_type == dpkt.dns.DNS_PTR :
-        #print "response is a hostname from an IP address", r_data, "in hex: ", hexify(r_data)
-        #print "response is a hostname from an IP address", rr.ptrname
+    elif r_type == dpkt.dns.DNS_AAAA:
+        if len(r_data) == 0:
+            return 'unknown'
+        rr_string = socket.inet_ntop(socket.AF_INET6, r_data)
+    elif r_type == dpkt.dns.DNS_PTR:
         rr_string = rr.ptrname
-
-    elif r_type == dpkt.dns.DNS_SOA :
-        #print 'DNS_SOA:',rr.mname,rr.rname,rr.serial,rr.refresh,rr.retry,rr.expire, rr.minimum
-        rr_string = rr.mname + "," + rr.rname + "," + rr.serial + "," + rr.refresh + "," + rr.retry + "," + rr.expire + "," + rr.minimum
-        
-    elif r_type == dpkt.dns.DNS_MX :
-        #print 'DNS_MX:',rr.mxname,rr.preference
-        rr_string = rr.mxname + "," + rr.preference
-        
-    elif r_type == dpkt.dns.DNS_HINFO :
-        #print 'DNS_HINFO:',rr.text
+    elif r_type == dpkt.dns.DNS_SOA:
+        rr_string = '{0},{1},{2},{3},{4},{5},{6}'.format(rr.mname,rr.rname,rr.serial,rr.refresh,rr.retry,rr.expire,rr.minimum)
+    elif r_type == dpkt.dns.DNS_MX:
+        rr_string = rr.mxname + ',' + rr.preference
+    elif r_type == dpkt.dns.DNS_HINFO:
         rr_string = rr.rtext
-        
-    elif r_type == dpkt.dns.DNS_TXT :
-        #print "TEXT:",rr.text
+    elif r_type == dpkt.dns.DNS_TXT:
         rr_string = rr.rtext
-        
-    elif r_type == dpkt.dns.DNS_SRV :
-        #print 'DNS_SRV:',rr.srvname,rr.port,rr.priority,rr.weight
-        rr_string = rr.srvname + "," + rr.port + "," + rr.priority + "," + rr.weight
-        
+    elif r_type == dpkt.dns.DNS_SRV:
+        rr_string = '{0},{1},{2},{3}'.format(rr.srvname,rr.port,rr.priority,rr.weight)
     else :
-        #print "Unknown"
-        rr_string = "Unknown"
+        if r_type in type_table:
+            rr_string = hexify(r_data)
+        else:
+            return 'unknown'
 
-    #return "r_type" + ":" + type_table[r_type] + ":" + rr_string
-    return "\\" + type_table[r_type] + "\\" + rr_string
+    return '{0}\\{1}'.format(type_table[r_type],rr_string)
 
-        
-def readPcap(fileName, mode):
+# Parse DNS response payload
+def parse_rr(payload, t):
+    rv = ''
 
-    type_table = {1:"A",        # IP v4 address, RFC 1035
-                  2:"NS",       # Authoritative name server, RFC 1035
-                  5:"CNAME",    # Canonical name for an alias, RFC 1035
-                  6:"SOA",      # Marks the start of a zone of authority, RFC 1035
-                 12:"PTR",      # Domain name pointer, RFC 1035
-                 13:"HINFO",    # Host information, RFC 1035
-                 15:"MX",       # Mail exchange, RFC 1035
-                 28:"AAAA",     # IP v6 address, RFC 3596
-                 16:"TXT",      # 
-                 33:"SRV",     # RFC 2782
-                 255:"ANY",     # all cached reco
-                 }
+    # For each response record
+    for rr in payload:
+        rr_string = decode_dns_response(rr,t)
 
-    payload_list = []
-    f = open(fileName,"r")
+        if rr_string == 'unknown':
+            continue
+
+        rv += ',{0}'.format(rr_string)
+
+    # Remove leading ','
+    rv = rv[1:]
+
+    return rv
+
+# Parses pcap file and extracts string values
+def readPcap(fn):
+    global type_table
+
+    payload = list()
+
+    # Open pcap file for reading
+    f = open(fn,'rb')
     pcap = dpkt.pcap.Reader(f)
-    total = 0
+
+    # For each packet
     for ts,buf in pcap:
         try:
+            # Extract data from pcap file
             eth = dpkt.ethernet.Ethernet(buf)
             ip = eth.data
             proto_data = ip.data
-            
-            if(proto_data.sport==53):
 
+            # DNS response
+            if (proto_data.sport == 53):
                 dns_payload = dpkt.dns.DNS(proto_data.data)
-                dns_payload_string = ""
 
-                for rr in dns_payload.an:
-                    rr_string = decode_dns_response ( rr, "AN" )
-                    if rr_string == "Unknown":
-                        print "DNS data unknown"
-                        continue 
-                    if dns_payload_string == "":
-                        dns_payload_string = rr_string
-                    else:
-                        dns_payload_string = dns_payload_string + "," + str(rr_string)
+                dns_response_str = ''
 
-                for rr in dns_payload.ns:
-                    rr_string = decode_dns_response ( rr, "NS" )
-                    if rr_string == "Unknown":
-                        continue 
-                    if dns_payload_string == "":
-                        dns_payload_string = rr_string
-                    else:
-                        dns_payload_string = dns_payload_string + "," + str(rr_string)
+                # Parse nameserver response
+                dns_response_str += parse_rr(dns_payload.ns,'NS')
+                # Parse authoritative nameserver response
+                dns_response_str += parse_rr(dns_payload.an,'AN')
+                # Parse additional responses
+                dns_response_str += parse_rr(dns_payload.ar,'AR')
 
-                for rr in dns_payload.ar:
-                    rr_string = decode_dns_response ( rr, "AR" )
-                    if rr_string == "Unknown":
-                        continue 
-                    if dns_payload_string == "":
-                        dns_payload_string = rr_string
-                    else:
-                        dns_payload_string = dns_payload_string + "," + str(rr_string)
+                # Parse rest of record
+                dns_payload_str = '{0}\\{1}\\{2}\\{3}\\{4}\\{5}\\{6}\\{7}'.format(dns_payload.id,
+                                                                                  dns_payload.qr,
+                                                                                  dns_payload.opcode,
+                                                                                  dns_payload.rcode,
+                                                                                  len(dns_payload.an),
+                                                                                  len(dns_payload.ns),
+                                                                                  len(dns_payload.ar),
+                                                                                  dns_response_str)
 
-                #print "Payload string response:"
-                #print dns_payload_string
-                if dns_payload_string != "":
-                    #dns_payload_string = str(dns_payload.id) + ":" + str(dns_payload.qr) + ":" + str(dns_payload.opcode) + ":" + str(dns_payload.rcode) + ":" +  ":Answer_RRs:" + str(len(dns_payload.an)) + ":Authority_RRs:" + str(len(dns_payload.ns)) + ":Additional_RRs:" + str(len(dns_payload.ar)) + ":" + dns_payload_string
-                    dns_payload_string = str(dns_payload.id) + "\\" + str(dns_payload.qr) + "\\" + str(dns_payload.opcode) + "\\" + str(dns_payload.rcode) + "\\" +  str(len(dns_payload.an)) + "\\" + str(len(dns_payload.ns)) + "\\" + str(len(dns_payload.ar)) + "\\" + dns_payload_string
+                payload.append(dns_payload_str)
 
-                    payload_list.append(str(dns_payload_string))
-                    total = total + 1
-       
-                    #if mode == "testing":
-                    #    print "\n\n\n= = = = = = = = = = = = = = = = ="
-                    #    print "My testing payload has length: " + str(len(dns_payload_string))
-                    #    print dns_payload_string
-                    #    print "\n"
-
-                
-                
-            elif(proto_data.dport==53):
+            # DNS request
+            elif (proto_data.dport == 53):
                 dns_payload = dpkt.dns.DNS(proto_data.data)
-                #print dns_payload
-                dns_payload_string = ""
-                #dns_payload_string = str(dns_payload.id) + ":" + str(dns_payload.qr) + ":" + str(dns_payload.opcode) + ":" + str(dns_payload.rcode)  +  ":Answer_RRs:" + str(len(dns_payload.an)) + ":Authority_RRs:" + str(len(dns_payload.ns)) + ":Additional_RRs:" + str(len(dns_payload.ar)) + ":" + dns_payload.qd[0].name + ":" + str(dns_payload.qd[0].type) + ":" + type_table[dns_payload.qd[0].type]
-                dns_payload_string = str(dns_payload.id) + "\\" + str(dns_payload.qr) + "\\" + str(dns_payload.opcode) + "\\" + str(dns_payload.rcode)  +  "\\" + str(len(dns_payload.an)) + "\\" + str(len(dns_payload.ns)) + "\\" + str(len(dns_payload.ar)) + "\\" + dns_payload.qd[0].name + "\\" + str(dns_payload.qd[0].type) + "\\" + type_table[dns_payload.qd[0].type]
-                    
-                if dns_payload_string != "":
-                    payload_list.append(str(dns_payload_string))
-                    #print dns_payload_string
-                    total = total + 1
-                    
-                #if mode == "testing":
-                #    print "\n\n\n= = = = = = = = = = = = = = = = ="
-                #    print "My testing payload has length: " + str(len(dns_payload_string)) + ":"
-                #    print dns_payload_string
-                #    print "\n"
 
+                # Parse request
+                dns_payload_str = '{0}\\{1}\\{2}\\{3}\\{4}\\{5}\\{6}\\{7}\\{8}\\{9}'.format(dns_payload.id,
+                                                                                            dns_payload.qr,
+                                                                                            dns_payload.opcode,
+                                                                                            dns_payload.rcode,
+                                                                                            len(dns_payload.an),
+                                                                                            len(dns_payload.ns),
+                                                                                            len(dns_payload.ar),
+                                                                                            dns_payload.qd[0].name,
+                                                                                            dns_payload.qd[0].type,
+                                                                                            dns_payload.qd[0].type)
 
-            elif (proto_data.sport == 1924 and proto_data.dport == 1957):
-                dns_payload_string = proto_data.data
-                payload_list.append(str(dns_payload_string))
-                total = total + 1 
-    
-            elif(proto_data.sport==80 or proto_data.dport==80):
-                    payload = proto_data.data
-                    payload_list.append(str(payload))
-                    total = total + 1
+                payload.append(dns_payload_str)
 
-                    #if mode == "testing":
-                    #    print "\n\n\n= = = = = = = = = = = = = = = = ="
-                    #    print "My testing payload has length: " + str(len(payload)) + ":"
-                    #    print payload
-                    #    print "\n"
+            # HTTP response or request
+            elif ((proto_data.sport == 80) or (proto_data.dport == 80)):
+                payload.append(str(proto_data.data))
 
-            elif(mode == "testing"):
-                    payload = proto_data.data
-                    payload_list.append(str(payload))
-                    total = total + 1
-                    #print "\n\n\n= = = = = = = = = = = = = = = = ="
-                    #print "My testing payload has length: " + str(len(payload)) + ":"
-                    #print payload
-                    #print "\n"
-                        
-            #if len(str(dns_payload_string)) == 361:
-            #    print "361\n"
-            #    print proto_data.sport
-            #    print proto_data.dport
-            #    print dns_payload_string
+        except Exception as e:
+            # Close file
+            f.close()
 
+            print 'Error: ', str(e)
+            sys.exit(1)
 
-        except :
-            continue
-        
-	#print "Total payloads read:" + str(fileName) + ":" + str(total) + "\n"
-    return payload_list
+    # Close file
+    f.close()
 
+    return payload
 
-def getPayloadStrings(folder):
-    payload_list = []
+# Retrieves payload features of samples
+def getPayloadStrings(sample):
+    payload = list()
 
-    for fn in os.listdir(folder):
-        payload_list.extend(readPcap(os.path.join(folder,fn),'training'))
+    for fn in sample:
+        payload.extend(readPcap(fn))
 
-    return payload_list
-
-
-def read_attack_data(filename):
-#This function reads the output of the polymorphic blend code (the file does not end in pcap)
-
-    listl = open(filename)
-    listl1 = listl.read()
-    #print listl1
-    return [listl1]
-
-
+    return payload

@@ -16,11 +16,7 @@ apt-get update
 
 # Install python2.7
 apt-get install -y python2.7
-
-apt-get install -y python-tk
-
-# Install pip
+apt-get install -y python-tk    # https://dpkt.readthedocs.io/en/latest/
+apt-get install -y python-scipy
 apt-get install -y python-pip
-
-# Install python libraries
 pip install -r requirements.txt
