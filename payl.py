@@ -3,6 +3,7 @@ import os
 import numpy as np
 import random
 import configparser
+import cPickle as pkl
 
 import read_pcap
 import analysis
@@ -22,31 +23,31 @@ def _main():
     config.read(configFN)
 
     # Parse parameters
-    folder = str(config['general']['folder'])
-    sample_fn = str(config['general']['samples'])
+    feature_fn = str(config['general']['feature'])
+    model_fn = str(config['general']['model'])
 
     protocol = str(config['payl']['type'])
-    smoothing_lower = float(config['payl']['smoothing_lower'])
-    smoothing_upper = float(config['payl']['smoothing_upper'])
-    smoothing_iter = float(config['payl']['smoothing_iter'])
-    threshold_lower = float(config['payl']['threshold_lower'])
-    threshold_upper = float(config['payl']['threshold_upper'])
-    threshold_iter = float(config['payl']['threshold_iter'])
+    smoothing_factor = float(config['payl']['smoothing_factor'])
+    threshold = float(config['payl']['threshold'])
+
+    # If model already exists, quit
+    if os.path.exists(model_fn):
+        sys.stderr.write(('Error. Model file "{0}" already exists.\n'.format(model_fn)))
+        sys.exit(1)
 
     # Check protocol parameter
     if protocol not in ['HTTP','DNS']:
         sys.stderr.write('Error. "{0}" is an invalid protocol.\n'.format(protocol))
         sys.exit(1)
 
-    # Get samples
-    sample = list()
-    with open(sample_fn,'r') as fr:
+    print 'Reading features'
+
+    # Read in features
+    payload = list()
+    with open(feature_fn,'r') as fr:
         for line in fr:
             line = line.strip('\n')
-            sample.append(os.path.join(folder,line))
-
-    # Extract payloads of all pcap data
-    payload = read_pcap.getPayloadStrings(sample)
+            payload.append(line)
 
     # Shuffle and split payloads into training/testing sets
     random.shuffle(payload)
@@ -70,13 +71,16 @@ def _main():
             train.append(max_test)
             test.remove(max_test)
 
-    # Loop over parameter ranges to find best parameters
-    for sf in np.arange(smoothing_lower, smoothing_upper, smoothing_iter):
-        for thresh in np.arange(threshold_lower, threshold_upper, threshold_iter):
-            print 'Smoothing Factor: {0}'.format(sf)
-            print 'Threshold for Mahalanobis Distance: {0}'.format(thresh)
-            analysis.train_and_test(train, test, sf, thresh)
-            print '---------------------------------------------'
+    # Train model
+    model,train_lengths,min_length = analysis.train_and_test(train, test, smoothing_factor, threshold)
+
+    print 'Saving model'
+
+    # Store model
+    with open(model_fn,'wb') as fw:
+        pkl.dump(model,fw)
+        pkl.dump(train_lengths,fw)
+        pkl.dump(min_length,fw)
 
 if __name__ == '__main__':
     _main()

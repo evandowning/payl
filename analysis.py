@@ -68,7 +68,7 @@ def train_and_test(train, test, sf, thresh):
 
         # If we've stored this length of payload before, retrieve the feature vector
         # and calculate the Mahalanobis Distance
-        if(len(payload) in train_length.keys()):
+        if len(payload) in train_length.keys():
             averaged_feature_vector = (feature_vector[min_length-len(payload)])
             mahabs_distance = dc.mahalanobis_distance(averaged_feature_vector, freq, sf)
 
@@ -82,3 +82,6 @@ def train_and_test(train, test, sf, thresh):
     print 'TPs: {0}    FNs: {1}'.format(TP,FN)
     print 'Percentage of True positives: {0}/{1} = {2} %'.format(TP,len(test),str((TP/float(len(test)))*100.0))
     print 'Percentage of False negatives: {0}/{1} = {2} %'.format(FN,len(test),str((FN/float(len(test)))*100.0))
+
+    # Return model
+    return feature_vector,train_length.keys(),min_length
