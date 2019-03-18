@@ -9,7 +9,7 @@ import read_pcap
 import analysis
 
 def usage():
-    print 'usage: python payl.py payl.cfg'
+    sys.stderr.write('usage: python payl.py payl.cfg\n')
     sys.exit(2)
 
 def _main():
@@ -40,7 +40,7 @@ def _main():
         sys.stderr.write('Error. "{0}" is an invalid protocol.\n'.format(protocol))
         sys.exit(1)
 
-    print 'Reading features'
+    sys.stdout.write('Reading features\n')
 
     # Read in features
     payload = list()
@@ -75,7 +75,7 @@ def _main():
     # Train model
     model,train_lengths,min_length = analysis.train_and_test(train, test, smoothing_factor, threshold)
 
-    print 'Saving model'
+    sys.stdout.write('Saving model\n')
 
     # Store model
     with open(model_fn,'wb') as fw:

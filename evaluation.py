@@ -6,7 +6,7 @@ import analysis
 import distance_and_clustering as dc
 
 def usage():
-    print 'usage: python evaluation.py model.pkl features.pkl smoothing_factor threshold'
+    sys.stderr.write('usage: python evaluation.py model.pkl features.pkl smoothing_factor threshold\n')
     sys.exit(2)
 
 def _main():
@@ -18,7 +18,7 @@ def _main():
     smoothing_factor = float(sys.argv[3])
     threshold = float(sys.argv[4])
 
-    print 'Reading model'
+    sys.stdout.write('Reading model\n')
 
     # Read model
     model = None
@@ -29,7 +29,7 @@ def _main():
         train_lengths = pkl.load(fr)
         min_length = pkl.load(fr)
 
-    print 'Reading features'
+    sys.stdout.write('Reading features\n')
 
     # Read in features
     payload = list()
@@ -44,7 +44,7 @@ def _main():
     TN = 0
     FN = 0
 
-    print 'Testing model'
+    sys.stdout.write('Testing model\n')
 
     # Test model on features
     for p,l in payload:
@@ -69,12 +69,12 @@ def _main():
         elif (mahabs_distance > threshold) and (l == '1'):
             TN += 1 # it's anomalous and is classified as anomalous
 
-    print 'Total Number of samples: {0}'.format(len(payload))
-    print 'TPs: {0}    FPs: {1}    TN: {2}    FN: {3}'.format(TP,FP,TN,FN)
-    print 'Percentage of True positives: {0}/{1} = {2} %'.format(TP,len(payload),str((TP/float(len(payload)))*100.0))
-    print 'Percentage of False positives: {0}/{1} = {2} %'.format(FP,len(payload),str((FP/float(len(payload)))*100.0))
-    print 'Percentage of True negatives: {0}/{1} = {2} %'.format(TN,len(payload),str((TN/float(len(payload)))*100.0))
-    print 'Percentage of False negatives: {0}/{1} = {2} %'.format(FN,len(payload),str((FN/float(len(payload)))*100.0))
+    sys.stdout.write('Total Number of samples: {0}\n'.format(len(payload)))
+    sys.stdout.write('TPs: {0}    FPs: {1}    TN: {2}    FN: {3}\n'.format(TP,FP,TN,FN))
+    sys.stdout.write('Percentage of True positives: {0}/{1} = {2} %\n'.format(TP,len(payload),str((TP/float(len(payload)))*100.0)))
+    sys.stdout.write('Percentage of False positives: {0}/{1} = {2} %\n'.format(FP,len(payload),str((FP/float(len(payload)))*100.0)))
+    sys.stdout.write('Percentage of True negatives: {0}/{1} = {2} %\n'.format(TN,len(payload),str((TN/float(len(payload)))*100.0)))
+    sys.stdout.write('Percentage of False negatives: {0}/{1} = {2} %\n'.format(FN,len(payload),str((FN/float(len(payload)))*100.0)))
 
 if __name__ == '__main__':
     _main()

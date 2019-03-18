@@ -156,7 +156,7 @@ def readPcap(fn):
             # Close file
             f.close()
 
-            print 'Error: ', str(e)
+            sys.stderr.write('Error: {0}\n'.format(str(e)))
             sys.exit(1)
 
     # Close file
@@ -169,7 +169,7 @@ def getPayloadStrings(sample):
     payload = list()
 
     for fn,label in sample:
-        print 'scanning ', fn
+        sys.stdout.write('scanning {0}\n'.format(fn))
 
         # Read in individual payloads from pcap file
         payloads = readPcap(fn)

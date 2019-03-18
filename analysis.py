@@ -37,7 +37,7 @@ def train_and_test(train, test, sf, thresh):
         stddev = [0]*256
         feature_vector.append(np.vstack((mean,stddev)).T)
 
-    print 'Training Model'
+    sys.stdout.write('Training Model\n')
 
     # For each length of payload, calculate the frequency of ASCII characters
     for key in sorted(train_length.keys()):
@@ -54,7 +54,7 @@ def train_and_test(train, test, sf, thresh):
         mean = np.mean(freq, axis=0)
         feature_vector[min_length-key] = np.vstack((mean,stddev)).T
 
-    print 'Testing Model'
+    sys.stdout.write('Testing Model\n')
 
     TP = 0
     FP = 0
@@ -78,10 +78,10 @@ def train_and_test(train, test, sf, thresh):
         else:
             FP += 1 # it's nominal, but is classified as anomalous
 
-    print 'Total Number of testing samples: {0}'.format(len(test))
-    print 'TPs: {0}    FPs: {1}'.format(TP,FP)
-    print 'Percentage of True positives: {0}/{1} = {2} %'.format(TP,len(test),str((TP/float(len(test)))*100.0))
-    print 'Percentage of False positives: {0}/{1} = {2} %'.format(FP,len(test),str((FP/float(len(test)))*100.0))
+    sys.stdout.write('Total Number of testing samples: {0}\n'.format(len(test)))
+    sys.stdout.write('TPs: {0}    FPs: {1}\n'.format(TP,FP))
+    sys.stdout.write('Percentage of True positives: {0}/{1} = {2} %\n'.format(TP,len(test),str((TP/float(len(test)))*100.0)))
+    sys.stdout.write('Percentage of False positives: {0}/{1} = {2} %\n'.format(FP,len(test),str((FP/float(len(test)))*100.0)))
 
     # Return model
     return feature_vector,train_length.keys(),min_length

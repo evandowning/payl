@@ -5,7 +5,7 @@ import cPickle as pkl
 import read_pcap
 
 def usage():
-    print 'usage: python preprocess.py pcap/ nominal_samples.txt features.pkl'
+    sys.stderr.write('usage: python preprocess.py pcap/ nominal_samples.txt features.pkl\n)'
     sys.exit(2)
 
 def _main():
@@ -18,7 +18,7 @@ def _main():
 
     # Error if feature folder already exists
     if os.path.exists(feature_fn):
-        sys.stderr.write(('Error. Feature file "{0}" already exists.\n'.format(feature_fn)))
+        sys.stderr.write('Error. Feature file "{0}" already exists.\n'.format(feature_fn))
         sys.exit(1)
 
     # Get samples
