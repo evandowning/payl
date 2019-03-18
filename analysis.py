@@ -18,7 +18,7 @@ def train_and_test(train, test, sf, thresh):
     train_length = dict()
 
     # Store payloads into dictionary
-    for payload in train:
+    for payload,label in train:
         l = len(payload)
 
         if l not in train_length:
@@ -57,10 +57,10 @@ def train_and_test(train, test, sf, thresh):
     print 'Testing Model'
 
     TP = 0
-    FN = 0
+    FP = 0
 
     # Run testing
-    for payload in test:
+    for payload,label in test:
         mahabs_distance = sys.maxint
 
         # Get frequency of payload
@@ -74,14 +74,14 @@ def train_and_test(train, test, sf, thresh):
 
         # Compare the distance to the threshold
         if mahabs_distance <= thresh:
-            TP += 1
+            TP += 1 # it's nominal and is classified as nominal
         else:
-            FN += 1
+            FP += 1 # it's nominal, but is classified as anomalous
 
     print 'Total Number of testing samples: {0}'.format(len(test))
-    print 'TPs: {0}    FNs: {1}'.format(TP,FN)
+    print 'TPs: {0}    FPs: {1}'.format(TP,FP)
     print 'Percentage of True positives: {0}/{1} = {2} %'.format(TP,len(test),str((TP/float(len(test)))*100.0))
-    print 'Percentage of False negatives: {0}/{1} = {2} %'.format(FN,len(test),str((FN/float(len(test)))*100.0))
+    print 'Percentage of False positives: {0}/{1} = {2} %'.format(FP,len(test),str((FP/float(len(test)))*100.0))
 
     # Return model
     return feature_vector,train_length.keys(),min_length

@@ -44,10 +44,11 @@ def _main():
 
     # Read in features
     payload = list()
-    with open(feature_fn,'r') as fr:
-        for line in fr:
-            line = line.strip('\n')
-            payload.append(line)
+    with open(feature_fn,'rb') as fr:
+        n = pkl.load(fr)
+
+        for i in range(n):
+            payload.append(pkl.load(fr))
 
     # Shuffle and split payloads into training/testing sets
     random.shuffle(payload)

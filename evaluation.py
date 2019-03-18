@@ -6,7 +6,7 @@ import analysis
 import distance_and_clustering as dc
 
 def usage():
-    print 'usage: python evaluation.py model.pkl features.txt smoothing_factor threshold'
+    print 'usage: python evaluation.py model.pkl features.pkl smoothing_factor threshold'
     sys.exit(2)
 
 def _main():
@@ -34,17 +34,20 @@ def _main():
     # Read in features
     payload = list()
     with open(feature_fn,'r') as fr:
-        for line in fr:
-            line = line.strip('\n')
-            payload.append(line)
+        n = pkl.load(fr)
+
+        for i in range(n):
+            payload.append(pkl.load(fr))
 
     TP = 0
+    FP = 0
+    TN = 0
     FN = 0
 
     print 'Testing model'
 
     # Test model on features
-    for p in payload:
+    for p,l in payload:
         mahabs_distance = sys.maxint
 
         # Get frequency of payload
@@ -57,14 +60,20 @@ def _main():
             mahabs_distance = dc.mahalanobis_distance(averaged_feature_vector, freq, smoothing_factor)
 
         # Compare the distance to the threshold
-        if mahabs_distance <= threshold:
-            TP += 1
-        else:
-            FN += 1
+        if (mahabs_distance <= threshold) and (l == '0'):
+            TP += 1 # it's nominal and is classified as nominal
+        elif (mahabs_distance <= threshold) and (l == '1'):
+            FN += 1 # it's anomalous, but is classified as nominal
+        elif (mahabs_distance > threshold) and (l == '0'):
+            FP += 1 # it's nominal, but is classified as anomalous
+        elif (mahabs_distance > threshold) and (l == '1'):
+            TN += 1 # it's anomalous and is classified as anomalous
 
     print 'Total Number of samples: {0}'.format(len(payload))
-    print 'TPs: {0}    FNs: {1}'.format(TP,FN)
+    print 'TPs: {0}    FPs: {1}    TN: {2}    FN: {3}'.format(TP,FP,TN,FN)
     print 'Percentage of True positives: {0}/{1} = {2} %'.format(TP,len(payload),str((TP/float(len(payload)))*100.0))
+    print 'Percentage of False positives: {0}/{1} = {2} %'.format(FP,len(payload),str((FP/float(len(payload)))*100.0))
+    print 'Percentage of True negatives: {0}/{1} = {2} %'.format(TN,len(payload),str((TN/float(len(payload)))*100.0))
     print 'Percentage of False negatives: {0}/{1} = {2} %'.format(FN,len(payload),str((FN/float(len(payload)))*100.0))
 
 if __name__ == '__main__':

@@ -1,10 +1,11 @@
 import sys
 import os
+import cPickle as pkl
 
 import read_pcap
 
 def usage():
-    print 'usage: python preprocess.py pcap/ samples.txt features.txt'
+    print 'usage: python preprocess.py pcap/ nominal_samples.txt features.pkl'
     sys.exit(2)
 
 def _main():
@@ -25,21 +26,21 @@ def _main():
     with open(sample_fn,'r') as fr:
         for line in fr:
             line = line.strip('\n')
-            sample.append(os.path.join(folder,line))
+            fn,label = line.split('\t')
+            sample.append((os.path.join(folder,fn),label))
 
     # Extract payloads of all pcap data
     payload = read_pcap.getPayloadStrings(sample)
 
     # Store features
-    with open(feature_fn,'w') as fw:
-        for p in payload:
-            # Replace Windows newlines for consistency
-            p = p.replace('\r\n','\n')
-            p = p.strip('\n')
+    with open(feature_fn,'wb') as fw:
+        # Write out number of payloads
+        num = len(payload)
+        pkl.dump(num,fw)
 
-            # Make sure payload is > 0
-            if len(p) > 0:
-                fw.write('{0}\n'.format(p))
+        # Write out each payload
+        for p,l in payload:
+            pkl.dump((p,l),fw)
 
 if __name__ == '__main__':
     _main()

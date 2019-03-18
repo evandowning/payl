@@ -148,6 +148,10 @@ def readPcap(fn):
             elif ((proto_data.sport == 80) or (proto_data.dport == 80)):
                 payload.append(str(proto_data.data))
 
+            # NOTE: temporary. ports used in attack
+            elif (proto_data.sport == 1924 and proto_data.dport == 1957):
+                payload.append(str(proto_data.data))
+
         except Exception as e:
             # Close file
             f.close()
@@ -164,8 +168,15 @@ def readPcap(fn):
 def getPayloadStrings(sample):
     payload = list()
 
-    for fn in sample:
+    for fn,label in sample:
         print 'scanning ', fn
-        payload.extend(readPcap(fn))
+
+        # Read in individual payloads from pcap file
+        payloads = readPcap(fn)
+
+        # Append payloads with labels
+        for p in payloads:
+            if len(p) > 0:
+                payload.append((p,label))
 
     return payload

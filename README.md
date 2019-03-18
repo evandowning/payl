@@ -13,7 +13,8 @@ $ sudo ./setup.sh
 ```
 # Extract features from pcaps to a text file
 # Filter by samples.txt (filenames contained in pcap/ folder)
-$ python preprocess.py pcap/ samples.txt features.txt
+# samples.txt is tab-separated by a value of 0 (nominal) or 1 (anomalous)
+$ python preprocess.py pcap/ samples.txt features.pkl
 
 # Configure settings
 # Examples can be found under config/
@@ -23,5 +24,5 @@ $ vi payl.cfg
 $ python payl.py payl.cfg
 
 # Evaluate
-$ python evaluation.py model.pkl features.txt smoothing_factor threshold
+$ python evaluation.py model.pkl features.pkl smoothing_factor threshold
 ```
