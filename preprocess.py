@@ -5,7 +5,7 @@ import cPickle as pkl
 import read_pcap
 
 def usage():
-    sys.stderr.write('usage: python preprocess.py pcap/ nominal_samples.txt features.pkl\n)'
+    sys.stderr.write('usage: python preprocess.py pcap/ nominal_samples.txt features.pkl\n')
     sys.exit(2)
 
 def _main():
