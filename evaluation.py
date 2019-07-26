@@ -44,6 +44,9 @@ def _main():
     TN = 0
     FN = 0
 
+    total_nominal = 0
+    total_anomalous = 0
+
     sys.stdout.write('Testing model\n')
 
     # Test model on features
@@ -59,22 +62,33 @@ def _main():
             averaged_feature_vector = (model[min_length-len(p)])
             mahabs_distance = dc.mahalanobis_distance(averaged_feature_vector, freq, smoothing_factor)
 
+        # Tally number of nominal and anomalous samples
+        if l == '0':
+            total_nominal += 1
+        elif l == '1':
+            total_anomalous += 1
+
         # Compare the distance to the threshold
         if (mahabs_distance <= threshold) and (l == '0'):
             TP += 1 # it's nominal and is classified as nominal
-        elif (mahabs_distance <= threshold) and (l == '1'):
-            FN += 1 # it's anomalous, but is classified as nominal
         elif (mahabs_distance > threshold) and (l == '0'):
             FP += 1 # it's nominal, but is classified as anomalous
         elif (mahabs_distance > threshold) and (l == '1'):
             TN += 1 # it's anomalous and is classified as anomalous
+        elif (mahabs_distance <= threshold) and (l == '1'):
+            FN += 1 # it's anomalous, but is classified as nominal
 
     sys.stdout.write('Total Number of samples: {0}\n'.format(len(payload)))
+    sys.stdout.write('Nominal: {0}    Anomalous: {1}\n'.format(total_nominal,total_anomalous))
     sys.stdout.write('TPs: {0}    FPs: {1}    TN: {2}    FN: {3}\n'.format(TP,FP,TN,FN))
-    sys.stdout.write('Percentage of True positives: {0}/{1} = {2} %\n'.format(TP,len(payload),str((TP/float(len(payload)))*100.0)))
-    sys.stdout.write('Percentage of False positives: {0}/{1} = {2} %\n'.format(FP,len(payload),str((FP/float(len(payload)))*100.0)))
-    sys.stdout.write('Percentage of True negatives: {0}/{1} = {2} %\n'.format(TN,len(payload),str((TN/float(len(payload)))*100.0)))
-    sys.stdout.write('Percentage of False negatives: {0}/{1} = {2} %\n'.format(FN,len(payload),str((FN/float(len(payload)))*100.0)))
+    if total_nominal > 0:
+        sys.stdout.write('Percentage of True positives: {0}/{1} = {2} %\n'.format(TP,total_nominal,str((TP/float(total_nominal))*100.0)))
+    if total_nominal > 0:
+        sys.stdout.write('Percentage of False positives: {0}/{1} = {2} %\n'.format(FP,total_nominal,str((FP/float(total_nominal))*100.0)))
+    if total_anomalous > 0:
+        sys.stdout.write('Percentage of True negatives: {0}/{1} = {2} %\n'.format(TN,total_anomalous,str((TN/float(total_anomalous))*100.0)))
+    if total_anomalous > 0:
+        sys.stdout.write('Percentage of False negatives: {0}/{1} = {2} %\n'.format(FN,total_anomalous,str((FN/float(total_anomalous))*100.0)))
 
 if __name__ == '__main__':
     _main()
